@@ -81,6 +81,7 @@ enum
     SPELL_SUMMON_ESSENCE_DESIRE     = 41493,
     SPELL_SUMMON_ESSENCE_ANGER      = 41496,
     SPELL_SUMMON_ENSLAVED_SOUL      = 41537,
+    SPELL_SUBMERGE_VISUAL           = 28819,
 
     // Soul spells
     SPELL_ENSLAVED_SOUL_PASSIVE     = 41535,
@@ -225,8 +226,8 @@ struct MANGOS_DLL_DECL boss_reliquary_of_soulsAI : public Scripted_NoMovementAI
         m_uiSoulDeathCount = 0;
         m_uiSoulSummonedCount = 0;
         m_uiAnimResetTimer = 2000;
-        // Reset animation
-        m_creature->HandleEmote(EMOTE_ONESHOT_EMERGE);
+        // Reset animation - visual effect similar to EMOTE_ONESHOT_EMERGE
+        m_creature->RemoveAurasDueToSpell(SPELL_SUBMERGE_VISUAL);
     }
 
     // Wrapper to count the dead spirits
@@ -249,8 +250,9 @@ struct MANGOS_DLL_DECL boss_reliquary_of_soulsAI : public Scripted_NoMovementAI
         {
             if (m_uiAnimationTimer <= uiDiff)
             {
-                m_creature->HandleEmote(EMOTE_ONESHOT_SUBMERGE);
-                m_uiAnimationTimer = 0;
+                // Visual effect similar to EMOTE_ONESHOT_SUBMERGE
+                if (DoCastSpellIfCan(m_creature, SPELL_SUBMERGE_VISUAL) == CAST_OK)
+                    m_uiAnimationTimer = 0;
             }
             else
                 m_uiAnimationTimer -= uiDiff;
