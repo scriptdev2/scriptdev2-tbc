@@ -160,6 +160,12 @@ enum
     SPELL_SPIRIT_PARTICLES              = 17327,
     NPC_FRANCLORN_FORGEWRIGHT           = 8888,
     NPC_GAERIYAN                        = 9299,
+
+    // quest 11521
+    SPELL_EXPOSE_RAZORTHORN_ROOT        = 44935,
+    SPELL_SUMMON_RAZORTHORN_ROOT        = 44941,
+    NPC_RAZORTHORN_RAVAGER              = 24922,
+    GO_RAZORTHORN_DIRT_MOUND            = 187073,
 };
 
 bool EffectAuraDummy_spell_aura_dummy_npc(const Aura* pAura, bool bApply)
@@ -429,6 +435,24 @@ bool EffectDummyCreature_spell_dummy_npc(Unit* pCaster, uint32 uiSpellId, SpellE
                 pCreatureTarget->SetDeathState(JUST_DIED);
                 pCreatureTarget->SetHealth(0);
                 return true;
+            }
+            return true;
+        }
+        case SPELL_EXPOSE_RAZORTHORN_ROOT:
+        {
+            if (uiEffIndex == EFFECT_INDEX_0)
+            {
+                if (pCreatureTarget->GetEntry() != NPC_RAZORTHORN_RAVAGER)
+                    return true;
+
+                if (GameObject* pMound = GetClosestGameObjectWithEntry(pCreatureTarget, GO_RAZORTHORN_DIRT_MOUND, 20.0f))
+                {
+                    if (pMound->GetRespawnTime() != 0)
+                        return true;
+
+                    pCreatureTarget->CastSpell(pCreatureTarget, SPELL_SUMMON_RAZORTHORN_ROOT, true);
+                    pMound->SetLootState(GO_JUST_DEACTIVATED);
+                }
             }
             return true;
         }
