@@ -51,6 +51,7 @@ enum
     // Phase switch spells
     SPELL_HALAZZI_TRANSFORM_SUMMON  = 43143,            // summons 24143
     SPELL_TRANSFIGURE_TO_TROLL      = 43142,            // triggers 43573
+    SPELL_TRANSFIGURE_TRANSFORM     = 43573,
 
     SPELL_TRANSFORM_TO_LYNX_75      = 43145,
     SPELL_TRANSFORM_TO_LYNX_50      = 43271,
