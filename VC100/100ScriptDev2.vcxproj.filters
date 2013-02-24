@@ -468,7 +468,7 @@
     <ClCompile Include="..\scripts\eastern_kingdoms\molten_core\molten_core.cpp">
       <Filter>scripts\eastern_kingdoms\molten_core</Filter>
     </ClCompile>
-	<ClCompile Include="..\scripts\eastern_kingdoms\naxxramas\boss_anubrekhan.cpp">
+    <ClCompile Include="..\scripts\eastern_kingdoms\naxxramas\boss_anubrekhan.cpp">
       <Filter>scripts\eastern_kingdoms\naxxramas</Filter>
     </ClCompile>
     <ClCompile Include="..\scripts\eastern_kingdoms\naxxramas\boss_faerlina.cpp">
@@ -539,9 +539,6 @@
     </ClCompile>
     <ClCompile Include="..\scripts\eastern_kingdoms\scholomance\instance_scholomance.cpp">
       <Filter>scripts\eastern_kingdoms\scholomance</Filter>
-    </ClCompile>
-    <ClCompile Include="..\scripts\eastern_kingdoms\shadowfang_keep\boss_hummel.cpp">
-      <Filter>scripts\eastern_kingdoms\shadowfang_keep</Filter>
     </ClCompile>
     <ClCompile Include="..\scripts\eastern_kingdoms\shadowfang_keep\instance_shadowfang_keep.cpp">
       <Filter>scripts\eastern_kingdoms\shadowfang_keep</Filter>
@@ -1206,7 +1203,7 @@
     <ClInclude Include="..\scripts\eastern_kingdoms\molten_core\molten_core.h">
       <Filter>scripts\eastern_kingdoms\molten_core</Filter>
     </ClInclude>
-	<ClInclude Include="..\scripts\eastern_kingdoms\naxxramas\naxxramas.h">
+    <ClInclude Include="..\scripts\eastern_kingdoms\naxxramas\naxxramas.h">
       <Filter>scripts\eastern_kingdoms\naxxramas</Filter>
     </ClInclude>
     <ClInclude Include="..\scripts\eastern_kingdoms\scarlet_monastery\scarlet_monastery.h">

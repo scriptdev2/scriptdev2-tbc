@@ -927,10 +927,6 @@
 					Name="shadowfang_keep"
 					>
 					<File
-						RelativePath="..\scripts\eastern_kingdoms\shadowfang_keep\boss_hummel.cpp"
-						>
-					</File>
-					<File
 						RelativePath="..\scripts\eastern_kingdoms\shadowfang_keep\instance_shadowfang_keep.cpp"
 						>
 					</File>
