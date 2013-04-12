@@ -66,7 +66,7 @@ enum
     GO_COILFANG_WATERFALL   = 184212
 };
 
-bool AreaTrigger_at_coilfang_waterfall(Player* pPlayer, AreaTriggerEntry const* pAt)
+bool AreaTrigger_at_coilfang_waterfall(Player* pPlayer, AreaTriggerEntry const* /*pAt*/)
 {
     if (GameObject* pGo = GetClosestGameObjectWithEntry(pPlayer, GO_COILFANG_WATERFALL, 35.0f))
     {
@@ -89,7 +89,7 @@ enum
     QUEST_GAINING_ACCESS_H  = 10604
 };
 
-bool AreaTrigger_at_legion_teleporter(Player* pPlayer, AreaTriggerEntry const* pAt)
+bool AreaTrigger_at_legion_teleporter(Player* pPlayer, AreaTriggerEntry const* /*pAt*/)
 {
     if (pPlayer->isAlive() && !pPlayer->isInCombat())
     {
@@ -119,7 +119,7 @@ enum
     NPC_RAVENHOLDT          = 13936
 };
 
-bool AreaTrigger_at_ravenholdt(Player* pPlayer, AreaTriggerEntry const* pAt)
+bool AreaTrigger_at_ravenholdt(Player* pPlayer, AreaTriggerEntry const* /*pAt*/)
 {
     if (pPlayer->GetQuestStatus(QUEST_MANOR_RAVENHOLDT) == QUEST_STATUS_INCOMPLETE)
         pPlayer->KilledMonsterCredit(NPC_RAVENHOLDT);
@@ -152,7 +152,7 @@ bool AreaTrigger_at_scent_larkorwi(Player* pPlayer, AreaTriggerEntry const* pAt)
 ## at_murkdeep
 ######*/
 
-bool AreaTrigger_at_murkdeep(Player* pPlayer, AreaTriggerEntry const* pAt)
+bool AreaTrigger_at_murkdeep(Player* pPlayer, AreaTriggerEntry const* /*pAt*/)
 {
     // Handle Murkdeep event start
     // The area trigger summons 3 Greymist Coastrunners; The rest of the event is handled by world map scripts

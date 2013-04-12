@@ -152,7 +152,7 @@ struct MANGOS_DLL_DECL boss_reliquary_of_soulsAI : public Scripted_NoMovementAI
             m_pInstance->SetData(TYPE_RELIQUIARY, FAIL);
     }
 
-    void AttackStart(Unit* pWho) override { }
+    void AttackStart(Unit* /*pWho*/) override { }
 
     void MoveInLineOfSight(Unit* pWho) override
     {
@@ -349,7 +349,7 @@ struct MANGOS_DLL_DECL essence_base_AI : public ScriptedAI
         m_creature->ForcedDespawn();
     }
 
-    void DamageTaken(Unit* pKiller, uint32& uiDamage) override
+    void DamageTaken(Unit* /*pKiller*/, uint32& uiDamage) override
     {
         if (uiDamage < m_creature->GetHealth())
             return;
@@ -649,7 +649,7 @@ struct MANGOS_DLL_DECL npc_enslaved_soulAI : public ScriptedAI
         m_creature->ForcedDespawn();
     }
 
-    void UpdateAI(const uint32 uiDiff) override
+    void UpdateAI(const uint32 /*uiDiff*/) override
     {
         if (!m_creature->SelectHostileTarget() || !m_creature->getVictim())
             return;

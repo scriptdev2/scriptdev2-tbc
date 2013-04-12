@@ -328,7 +328,7 @@ CreatureAI* GetAI_npc_chicken_cluck(Creature* pCreature)
     return new npc_chicken_cluckAI(pCreature);
 }
 
-bool QuestAccept_npc_chicken_cluck(Player* pPlayer, Creature* pCreature, const Quest* pQuest)
+bool QuestAccept_npc_chicken_cluck(Player* /*pPlayer*/, Creature* pCreature, const Quest* pQuest)
 {
     if (pQuest->GetQuestId() == QUEST_CLUCK)
     {
@@ -339,7 +339,7 @@ bool QuestAccept_npc_chicken_cluck(Player* pPlayer, Creature* pCreature, const Q
     return true;
 }
 
-bool QuestRewarded_npc_chicken_cluck(Player* pPlayer, Creature* pCreature, const Quest* pQuest)
+bool QuestRewarded_npc_chicken_cluck(Player* /*pPlayer*/, Creature* pCreature, const Quest* pQuest)
 {
     if (pQuest->GetQuestId() == QUEST_CLUCK)
     {
@@ -677,7 +677,7 @@ void npc_doctorAI::PatientDied(Location* pPoint)
         Reset();
 }
 
-void npc_doctorAI::PatientSaved(Creature* soldier, Player* pPlayer, Location* pPoint)
+void npc_doctorAI::PatientSaved(Creature* /*soldier*/, Player* pPlayer, Location* pPoint)
 {
     if (pPlayer && m_playerGuid == pPlayer->GetObjectGuid())
     {
@@ -938,7 +938,7 @@ struct MANGOS_DLL_DECL npc_garments_of_questsAI : public npc_escortAI
         }
     }
 
-    void WaypointReached(uint32 uiPointId) override {}
+    void WaypointReached(uint32 /*uiPointId*/) override {}
 
     void UpdateEscortAI(const uint32 uiDiff) override
     {
@@ -995,7 +995,7 @@ struct MANGOS_DLL_DECL npc_guardianAI : public ScriptedAI
         m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
     }
 
-    void UpdateAI(const uint32 diff) override
+    void UpdateAI(const uint32 /*diff*/) override
     {
         if (!m_creature->SelectHostileTarget() || !m_creature->getVictim())
             return;
@@ -1051,7 +1051,7 @@ bool GossipHello_npc_innkeeper(Player* pPlayer, Creature* pCreature)
     return true;
 }
 
-bool GossipSelect_npc_innkeeper(Player* pPlayer, Creature* pCreature, uint32 uiSender, uint32 uiAction)
+bool GossipSelect_npc_innkeeper(Player* pPlayer, Creature* pCreature, uint32 /*uiSender*/, uint32 uiAction)
 {
     switch (uiAction)
     {
@@ -1154,7 +1154,7 @@ bool GossipHello_npc_mount_vendor(Player* pPlayer, Creature* pCreature)
     return true;
 }
 
-bool GossipSelect_npc_mount_vendor(Player* pPlayer, Creature* pCreature, uint32 uiSender, uint32 uiAction)
+bool GossipSelect_npc_mount_vendor(Player* pPlayer, Creature* pCreature, uint32 /*uiSender*/, uint32 uiAction)
 {
     if (uiAction == GOSSIP_ACTION_TRADE)
         pPlayer->SEND_VENDORLIST(pCreature->GetObjectGuid());
