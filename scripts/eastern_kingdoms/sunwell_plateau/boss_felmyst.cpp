@@ -185,7 +185,7 @@ struct MANGOS_DLL_DECL boss_felmystAI : public ScriptedAI
         if (m_pInstance)
             m_pInstance->SetData(TYPE_FELMYST, IN_PROGRESS);
 
-        float fGroundZ = m_creature->GetMap()->GetHeight(m_creature->GetPhaseMask(), m_creature->GetPositionX(), m_creature->GetPositionY(), m_creature->GetPositionZ());
+        float fGroundZ = m_creature->GetMap()->GetHeight(m_creature->GetPositionX(), m_creature->GetPositionY(), m_creature->GetPositionZ());
         m_creature->GetMotionMaster()->MovePoint(PHASE_TRANSITION, pWho->GetPositionX(), pWho->GetPositionY(), fGroundZ, false);
     }
 
@@ -238,7 +238,7 @@ struct MANGOS_DLL_DECL boss_felmystAI : public ScriptedAI
                 if (m_uiCorruptionCount == 3)
                 {
                     m_uiPhase = PHASE_TRANSITION;
-                    float fGroundZ = m_creature->GetMap()->GetHeight(m_creature->GetPhaseMask(), m_creature->GetPositionX(), m_creature->GetPositionY(), m_creature->GetPositionZ());
+                    float fGroundZ = m_creature->GetMap()->GetHeight(m_creature->GetPositionX(), m_creature->GetPositionY(), m_creature->GetPositionZ());
                     m_creature->GetMotionMaster()->MovePoint(PHASE_TRANSITION, m_creature->getVictim()->GetPositionX(), m_creature->getVictim()->GetPositionY(), fGroundZ, false);
                     return;
                 }
