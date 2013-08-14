@@ -942,7 +942,7 @@ INSERT INTO script_texts (entry,content_default,sound,type,language,emote,commen
 
 (-1033013,'Who dares interfere with the Sons of Arugal?',0,1,0,0,'boss_arugal YELL_FENRUS'),
 (-1033014,'%s vanishes.',0,2,0,0,'prisoner ashcrombe EMOTE_VANISH_AS'),
-(-1033015,'%s fumbles with the rusty lock on the courtyard door.',0,2,0,432,'prisoner adamant EMOTE_UNLOCK_DOOR_AD'),
+(-1033015,'%s fumbles with the rusty lock on the courtyard door.',0,2,0,0,'prisoner adamant EMOTE_UNLOCK_DOOR_AD'),
 (-1033016,'Arrrgh!',0,0,0,0,'deathstalker vincent SAY_VINCENT_DIE'),
 (-1033017,'You, too, shall serve!',5793,1,0,0,'boss_arugal YELL_AGGRO'),
 (-1033018,'Another Falls!',5795,1,0,0,'boss_arugal YELL_KILLED_PLAYER'),
