@@ -16,8 +16,14 @@
 
 /* ScriptData
 SDName: Boss_Netherspite
-SD%Complete: 50
-SDComment: Nether portals NYI. Find spell ID for tail swipe added in patch 3.0.2
+SD%Complete: 60
+
+SDComment:      - Find spell ID for tail swipe added in patch 3.0.2
+                - void zone deals no damage
+                - portal modells should be invisible
+                - portal creatures should be in fight but dont do autohits and dont move -> so we can turn triggered spells to false
+                - range of areatrigger is to high and it bugs netherspite -> he is in combat but doesnt attack anything
+
 SDCategory: Karazhan
 EndScriptData */
 
@@ -53,12 +59,12 @@ enum
     SPELL_EXHAUSTION_DOM        = 38639,
     SPELL_EXHAUSTION_PER        = 38637,
 
-    // spells which hit players
+    // beam visual spells which hit players
     SPELL_BEAM_SER              = 30401,
     SPELL_BEAM_DOM              = 30402,
     SPELL_BEAM_PER              = 30400,
 
-    // spells which hit Netherspite
+    // beam visual spells which hit Netherspite
     SPELL_BEAM_GREEN            = 30464,
     SPELL_BEAM_BLUE             = 30463,
     SPELL_BEAM_RED              = 30465,
@@ -73,12 +79,10 @@ enum
     EMOTE_PHASE_BANISH          = -1532090,
 
     // npcs
-    NPC_PORTAL_GREEN            = 17367,
-    NPC_PORTAL_BLUE             = 17368,
-    NPC_PORTAL_RED              = 17369,
     NPC_VOID_ZONE               = 16697,
 
     MAX_PORTALS                 = 3,
+    MAX_PORTAL_PROPERTIES		= 7,
 };
 
 struct SpawnLocation
@@ -100,12 +104,31 @@ enum NetherspitePhases
     BANISH_PHASE = 1,
 };
 
-static const uint32 auiPortals[MAX_PORTALS] =
+enum PortalProperties
 {
-    NPC_PORTAL_GREEN,
-    NPC_PORTAL_BLUE,
-    NPC_PORTAL_RED,
+    ENTRY       = 0,
+    VISUAL      = 1,
+    VISUAL_PLR  = 2,
+    VISUAL_NS   = 3,
+    BUFF_PLR    = 4,
+    BUFF_NS	    = 5,
+    DEBUFF      = 6,
 };
+
+static const uint32 auiPortalVector[MAX_PORTAL_PROPERTIES][MAX_PORTALS] =
+{
+    //      0 - GREEN               1 - BLUE                2 - RED
+    {       NPC_PORTAL_GREEN,       NPC_PORTAL_BLUE,        NPC_PORTAL_RED          },	// 0 - portal entries
+    {       SPELL_GREEN_PORTAL,     SPELL_BLUE_PORTAL,      SPELL_RED_PORTAL        },	// 1 - visual spells for portals
+    {       SPELL_BEAM_SER,         SPELL_BEAM_DOM,         SPELL_BEAM_PER          },  // 2 - visual spells for players
+    {       SPELL_BEAM_GREEN,       SPELL_BEAM_BLUE,        SPELL_BEAM_RED          },	// 3 - visual spells for netherspite
+    {       SPELL_SERENITY_PLR,     SPELL_DOMINANCE_PLR,    SPELL_PERSEVERENCE_PLR  },  // 4 - buffs for players
+    {       SPELL_SERENITY_NS,      SPELL_DOMINANCE_NS,     SPELL_PERSEVERENCE_NS   },  // 5 - buffs for netherspite
+    {       SPELL_EXHAUSTION_SER,   SPELL_EXHAUSTION_DOM,   SPELL_EXHAUSTION_PER    },	// 6 - debuffs	
+};
+
+//adjust how easy it is to catch the beam
+static const float beamHitbox = 0.8f;
 
 struct MANGOS_DLL_DECL boss_netherspiteAI : public ScriptedAI
 {
@@ -119,11 +142,15 @@ struct MANGOS_DLL_DECL boss_netherspiteAI : public ScriptedAI
 
     NetherspitePhases m_uiActivePhase;
 
+    Creature* m_portal[MAX_PORTALS];
+    Unit* m_portalHolder[MAX_PORTALS];
+
     uint32 m_uiEnrageTimer;
     uint32 m_uiVoidZoneTimer;
     uint32 m_uiPhaseSwitchTimer;
     uint32 m_uiNetherbreathTimer;
     uint32 m_uiEmpowermentTimer;
+    uint32 m_uiConnectionTimer;
 
     std::vector<uint32> m_vPortalEntryList;
 
@@ -135,6 +162,7 @@ struct MANGOS_DLL_DECL boss_netherspiteAI : public ScriptedAI
         m_uiEnrageTimer       = 9 * MINUTE * IN_MILLISECONDS;
         m_uiVoidZoneTimer     = 15000;
         m_uiPhaseSwitchTimer  = MINUTE * IN_MILLISECONDS;
+        m_uiConnectionTimer	  = 10000;
 
         SetCombatMovement(true);
 
@@ -143,7 +171,9 @@ struct MANGOS_DLL_DECL boss_netherspiteAI : public ScriptedAI
         m_vPortalEntryList.resize(MAX_PORTALS);
 
         for (uint8 i = 0; i < MAX_PORTALS; ++i)
-            m_vPortalEntryList[i] = auiPortals[i];
+            m_vPortalEntryList[i] = auiPortalVector[ENTRY][i];
+
+        DoResetPortals();
     }
 
     void Aggro(Unit* /*pWho*/) override
@@ -159,12 +189,16 @@ struct MANGOS_DLL_DECL boss_netherspiteAI : public ScriptedAI
     {
         if (m_pInstance)
             m_pInstance->SetData(TYPE_NETHERSPITE, DONE);
+
+        DoDespawnPortalsImmediately();
     }
 
     void JustReachedHome() override
     {
         if (m_pInstance)
             m_pInstance->SetData(TYPE_NETHERSPITE, FAIL);
+
+        DoDespawnPortalsImmediately();
     }
 
     void SwitchPhases()
@@ -173,6 +207,9 @@ struct MANGOS_DLL_DECL boss_netherspiteAI : public ScriptedAI
         {
             if (DoCastSpellIfCan(m_creature, SPELL_NETHERSPITE_ROAR) == CAST_OK)
             {
+                DoDebuffPortalHolderInBanishPhase();
+                DoResetPortals();
+
                 DoCastSpellIfCan(m_creature, SPELL_SHADOWFORM, CAST_TRIGGERED);
                 m_creature->RemoveAurasDueToSpell(SPELL_EMPOWERMENT);
 
@@ -196,6 +233,7 @@ struct MANGOS_DLL_DECL boss_netherspiteAI : public ScriptedAI
             DoScriptText(EMOTE_PHASE_BEAM, m_creature);
 
             DoSummonPortals();
+            m_uiConnectionTimer   = 5000;
             m_uiEmpowermentTimer  = 10000;
             m_uiPhaseSwitchTimer  = MINUTE * IN_MILLISECONDS;
         }
@@ -213,23 +251,142 @@ struct MANGOS_DLL_DECL boss_netherspiteAI : public ScriptedAI
         std::random_shuffle(m_vPortalEntryList.begin(), m_vPortalEntryList.end());
     }
 
+    void DoDespawnPortalsImmediately()
+    {
+        if (m_pInstance)
+        {
+            for (uint8 i = 0; i < MAX_PORTALS; ++i)
+            {
+                if (Creature* pPortal = m_pInstance->GetSingleCreatureFromStorage(auiPortalVector[ENTRY][i]))
+                {
+                    pPortal->ForcedDespawn();
+                    pPortal->RemoveFromWorld();
+                }
+            }
+        }
+    }
+
+    void DoResetPortals()
+    {
+        for (uint8 i = 0; i < MAX_PORTALS; ++i)
+        {
+            m_portal[i] = 0;
+            m_portalHolder[i] = 0;
+        }
+    }
+
+    void DoDebuffPortalHolder(uint8 portalIndex)
+    {
+        if (m_portalHolder[portalIndex] && m_portalHolder[portalIndex] != m_creature)
+            m_portalHolder[portalIndex]->CastSpell(m_portalHolder[portalIndex], auiPortalVector[DEBUFF][portalIndex], true);
+    }
+
+    void DoDebuffPortalHolderInBanishPhase()
+    {
+        for (uint8 i = 0; i < MAX_PORTALS; ++i)
+        {
+            DoDebuffPortalHolder(i);
+        }
+    }
+
     void JustSummoned(Creature* pSummoned) override
     {
+        //do this at db later
+        //we need to adjust the modells of the portals -> need invisible modells
+        pSummoned->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+        pSummoned->setFaction(m_creature->getFaction());
+
+        //we need the portals not moveing and auto attacking but staying in fight so that we can turn the triggered spells to false
+        //pSummoned->SetInCombatWithZone();
+        //pSummoned->addUnitState(UNIT_STAT_NO_COMBAT_MOVEMENT);
+
         switch (pSummoned->GetEntry())
         {
             case NPC_VOID_ZONE:
-                pSummoned->CastSpell(pSummoned, SPELL_CONSUMPTION, false);
+                pSummoned->CastSpell(pSummoned, SPELL_CONSUMPTION, true);
                 break;
-            case NPC_PORTAL_RED:
-                pSummoned->CastSpell(pSummoned, SPELL_RED_PORTAL, false);
+            case NPC_PORTAL_RED:			
+                pSummoned->CastSpell(pSummoned, SPELL_RED_PORTAL, true);
+                m_portal[2] = pSummoned;
                 break;
             case NPC_PORTAL_GREEN:
-                pSummoned->CastSpell(pSummoned, SPELL_GREEN_PORTAL, false);
+                pSummoned->CastSpell(pSummoned, SPELL_GREEN_PORTAL, true);
+                m_portal[0] = pSummoned;
                 break;
             case NPC_PORTAL_BLUE:
-                pSummoned->CastSpell(pSummoned, SPELL_BLUE_PORTAL, false);
+                pSummoned->CastSpell(pSummoned, SPELL_BLUE_PORTAL, true);
+                m_portal[1] = pSummoned;
                 break;
         }
+    }
+
+    void UpdatePortalConnection()
+    {
+        for (uint8 i = 0; i < MAX_PORTALS; ++i)
+        {
+            if (m_portal[i])
+            {
+                if (Player* pPlayer = GetClosestPlayerToPortalBetweenPortalAndNetherspite(i))
+                {
+                    m_portal[i]->CastSpell(pPlayer, auiPortalVector[BUFF_PLR][i], true);
+
+                    if (!m_portalHolder[i] || pPlayer != m_portalHolder[i])
+                    {
+                        DoDebuffPortalHolder(i);
+
+                        m_portal[i]->CastSpell(pPlayer, auiPortalVector[VISUAL_PLR][i], true);
+                        m_portalHolder[i] = pPlayer;
+                    }
+                }
+                else
+                {											
+                    m_portal[i]->CastSpell(m_creature, auiPortalVector[BUFF_NS][i], true);
+
+                    if (!m_portalHolder[i] || m_creature != m_portalHolder[i])
+                    {
+                        DoDebuffPortalHolder(i);
+
+                        m_portal[i]->CastSpell(m_creature, auiPortalVector[VISUAL_NS][i], true); 
+                        m_portalHolder[i] = m_creature;
+                    }
+                }
+            }
+        }
+    }
+
+    bool IsPlayerPositionBetweenPortalAndNetherspite(uint8 portalIndex, Player* pPlayer)
+    {
+        bool success = false;
+
+        if (m_portal[portalIndex] && pPlayer)
+        {
+            float delta = m_portal[portalIndex]->GetDistance2d(pPlayer) + pPlayer->GetDistance2d(m_creature) - m_portal[portalIndex]->GetDistance2d(m_creature);
+
+            if  (delta >= -beamHitbox && delta <= 0)
+                success = true;
+        }
+
+        return success;
+    }
+
+    Player* GetClosestPlayerToPortalBetweenPortalAndNetherspite(uint8 portalIndex)
+    {
+        Player* closestPlayer = 0;
+        Map::PlayerList const& lPlayers = m_pInstance->instance->GetPlayers();
+
+        for (Map::PlayerList::const_iterator itr = lPlayers.begin(); itr != lPlayers.end(); ++itr)
+        {
+            if (Player* pPlayer = itr->getSource())
+            {
+                if (m_portal[portalIndex] && !pPlayer->HasAura(auiPortalVector[DEBUFF][portalIndex]) && IsPlayerPositionBetweenPortalAndNetherspite(portalIndex, pPlayer) && m_portal[portalIndex]->GetDistance2d(m_creature) > m_portal[portalIndex]->GetDistance2d(pPlayer))
+                {
+                    if (!closestPlayer || m_portal[portalIndex]->GetDistance2d(closestPlayer) > m_portal[portalIndex]->GetDistance2d(pPlayer))
+                        closestPlayer = pPlayer;
+                }
+            }
+        }
+
+        return closestPlayer;
     }
 
     void UpdateAI(const uint32 uiDiff) override
@@ -237,11 +394,13 @@ struct MANGOS_DLL_DECL boss_netherspiteAI : public ScriptedAI
         if (!m_creature->SelectHostileTarget() || !m_creature->getVictim())
             return;
 
+        //PHASE SWITCH
         if (m_uiPhaseSwitchTimer <= uiDiff)
             SwitchPhases();
         else
             m_uiPhaseSwitchTimer -= uiDiff;
 
+        //ENRAGE
         if (m_uiEnrageTimer)
         {
             if (m_uiEnrageTimer <= uiDiff)
@@ -253,18 +412,27 @@ struct MANGOS_DLL_DECL boss_netherspiteAI : public ScriptedAI
                 m_uiEnrageTimer -= uiDiff;
         }
 
+        if (m_uiVoidZoneTimer < uiDiff)
+        {
+            if (Unit* pTarget = m_creature->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 0))
+            {
+                if (DoCastSpellIfCan(pTarget, SPELL_VOID_ZONE) == CAST_OK)
+                    m_uiVoidZoneTimer = 15000;
+            }
+        }
+        else
+            m_uiVoidZoneTimer -= uiDiff;
+
+        //BEAM PHASE
         if (m_uiActivePhase == BEAM_PHASE)
         {
-            if (m_uiVoidZoneTimer < uiDiff)
+            if (m_uiConnectionTimer < uiDiff)
             {
-                if (Unit* pTarget = m_creature->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 0))
-                {
-                    if (DoCastSpellIfCan(pTarget, SPELL_VOID_ZONE) == CAST_OK)
-                        m_uiVoidZoneTimer = 15000;
-                }
+                UpdatePortalConnection();
+                m_uiConnectionTimer = 1000;
             }
             else
-                m_uiVoidZoneTimer -= uiDiff;
+                m_uiConnectionTimer -= uiDiff;
 
             if (m_uiEmpowermentTimer)
             {
@@ -282,6 +450,7 @@ struct MANGOS_DLL_DECL boss_netherspiteAI : public ScriptedAI
 
             DoMeleeAttackIfReady();
         }
+        //BANISH PHASE
         else
         {
             if (m_uiNetherbreathTimer < uiDiff)
