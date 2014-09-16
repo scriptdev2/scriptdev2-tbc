@@ -31,7 +31,10 @@ enum
     NPC_CHROMATIC_DRAGON        = 10447,
     NPC_BLACKHAND_HANDLER       = 10742,
 
+    ITEM_SEAL_OF_ASCENSION      = 12344,
+
     // Doors
+    GO_DRAGONSPINE              = 164725,
     GO_EMBERSEER_IN             = 175244,
     GO_DOORS                    = 175705,
     GO_EMBERSEER_OUT            = 175153,
@@ -41,6 +44,13 @@ enum
     GO_GYTH_EXIT_DOOR           = 175186,
     GO_DRAKKISATH_DOOR_1        = 175946,
     GO_DRAKKISATH_DOOR_2        = 175947,
+
+    GO_BRAZIER_1                = 175528,
+    GO_BRAZIER_2                = 175529,
+    GO_BRAZIER_3                = 175530,
+    GO_BRAZIER_4                = 175531,
+    GO_BRAZIER_5                = 175532,
+    GO_BRAZIER_6                = 175533,
 
     GO_ROOM_7_RUNE              = 175194,
     GO_ROOM_3_RUNE              = 175195,
@@ -125,14 +135,21 @@ class MANGOS_DLL_DECL instance_blackrock_spire : public ScriptedInstance, privat
 
         void Update(uint32 uiDiff) override;
 
+        void DoOpenUpperdoorIfCan(Player* pPlayer);
+
     private:
         void JustDidDialogueStep(int32 iEntry) override;
         void DoSendNextStadiumWave();
         void DoSendNextFlamewreathWave();
+        void DoActivateNextDoorGO();
+
+        bool m_bAlreadyOpened;
 
         uint32 m_auiEncounter[MAX_ENCOUNTER];
         std::string m_strInstData;
 
+        uint32 m_uiDragonspineDoorTimer;
+        uint32 m_uiDragonspineGoCount;
         uint32 m_uiFlamewreathEventTimer;
         uint32 m_uiFlamewreathWaveCount;
         uint32 m_uiStadiumEventTimer;

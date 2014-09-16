@@ -86,6 +86,9 @@ static const DialogueEntry aStadiumDialogue[] =
 static const float rookeryEventSpawnPos[3] = {43.7685f, -259.82f, 91.6483f};
 
 instance_blackrock_spire::instance_blackrock_spire(Map* pMap) : ScriptedInstance(pMap), DialogueHelper(aStadiumDialogue),
+    m_bAlreadyOpened(false),
+    m_uiDragonspineDoorTimer(0),
+    m_uiDragonspineGoCount(0),
     m_uiFlamewreathEventTimer(0),
     m_uiFlamewreathWaveCount(0),
     m_uiStadiumEventTimer(0),
@@ -125,6 +128,17 @@ void instance_blackrock_spire::OnObjectCreate(GameObject* pGo)
         case GO_GYTH_EXIT_DOOR:
             if (GetData(TYPE_STADIUM) == DONE)
                 pGo->SetGoState(GO_STATE_ACTIVE);
+            break;
+
+        case GO_BRAZIER_1:
+        case GO_BRAZIER_2:
+        case GO_BRAZIER_3:
+        case GO_BRAZIER_4:
+        case GO_BRAZIER_5:
+        case GO_BRAZIER_6:
+            pGo->SetGoState(GO_STATE_READY);
+            break;
+        case GO_DRAGONSPINE:
             break;
 
         case GO_ROOM_1_RUNE: m_aRoomRuneGuid[0] = pGo->GetObjectGuid(); return;
@@ -615,6 +629,14 @@ void instance_blackrock_spire::Update(uint32 uiDiff)
         else
             m_uiFlamewreathEventTimer -= uiDiff;
     }
+
+    if (m_uiDragonspineDoorTimer)
+    {
+        if (m_uiDragonspineDoorTimer <= uiDiff)
+            DoActivateNextDoorGO();
+        else
+            m_uiDragonspineDoorTimer -= uiDiff;
+    }
 }
 
 void instance_blackrock_spire::StartflamewreathEventIfCan()
@@ -637,6 +659,61 @@ InstanceData* GetInstanceData_instance_blackrock_spire(Map* pMap)
     return new instance_blackrock_spire(pMap);
 }
 
+void instance_blackrock_spire::DoActivateNextDoorGO()
+{
+
+    switch (m_uiDragonspineGoCount)
+    {
+        GameObject* pGo1;
+        GameObject* pGo2;
+    case 0:
+        pGo1 = GetSingleGameObjectFromStorage(GO_BRAZIER_1);
+        pGo1->SetGoState(GO_STATE_ACTIVE);
+        pGo2 = GetSingleGameObjectFromStorage(GO_BRAZIER_2);
+        pGo2->SetGoState(GO_STATE_ACTIVE);
+        m_uiDragonspineDoorTimer = 1000;
+        ++m_uiDragonspineGoCount;
+        break;
+    case 1:
+        pGo1 = GetSingleGameObjectFromStorage(GO_BRAZIER_3);
+        pGo1->SetGoState(GO_STATE_ACTIVE);
+        pGo2 = GetSingleGameObjectFromStorage(GO_BRAZIER_4);
+        pGo2->SetGoState(GO_STATE_ACTIVE);
+        m_uiDragonspineDoorTimer = 1000;
+        ++m_uiDragonspineGoCount;
+        break;
+    case 2:
+        pGo1 = GetSingleGameObjectFromStorage(GO_BRAZIER_5);
+        pGo1->SetGoState(GO_STATE_ACTIVE);
+        pGo2 = GetSingleGameObjectFromStorage(GO_BRAZIER_6);
+        pGo2->SetGoState(GO_STATE_ACTIVE);
+        m_uiDragonspineDoorTimer = 1000;
+        ++m_uiDragonspineGoCount;
+        break;
+    case 3:
+        DoUseDoorOrButton(GO_DRAGONSPINE);
+        m_uiDragonspineDoorTimer = 0;
+        break;
+    default:
+        return;
+    }
+    return;
+}
+
+void instance_blackrock_spire::DoOpenUpperdoorIfCan(Player* pPlayer)
+{
+    if (m_bAlreadyOpened)
+        return;
+
+    if (pPlayer->HasItemCount(ITEM_SEAL_OF_ASCENSION, 1))
+    {
+        m_uiDragonspineDoorTimer = 1000;
+        m_bAlreadyOpened = true;
+        DoActivateNextDoorGO();
+    }
+    return;
+}
+
 bool AreaTrigger_at_blackrock_spire(Player* pPlayer, AreaTriggerEntry const* pAt)
 {
     if (!pPlayer->isAlive() || pPlayer->isGameMaster())
@@ -646,7 +723,10 @@ bool AreaTrigger_at_blackrock_spire(Player* pPlayer, AreaTriggerEntry const* pAt
     {
         case AREATRIGGER_ENTER_UBRS:
             if (instance_blackrock_spire* pInstance = (instance_blackrock_spire*) pPlayer->GetInstanceData())
+            {
+                pInstance->DoOpenUpperdoorIfCan(pPlayer);
                 pInstance->DoSortRoomEventMobs();
+            }
             break;
         case AREATRIGGER_STADIUM:
             if (instance_blackrock_spire* pInstance = (instance_blackrock_spire*) pPlayer->GetInstanceData())
