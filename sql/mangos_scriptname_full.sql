@@ -690,6 +690,7 @@ UPDATE creature_template SET ScriptName='npc_zeppit' WHERE entry=22484;
 UPDATE creature_template SET ScriptName='npc_protectorate_demolitionist' WHERE entry=20802;
 UPDATE creature_template SET ScriptName='npc_captured_vanguard' WHERE entry=20763;
 UPDATE creature_template SET ScriptName='npc_drijya' WHERE entry=20281;
+UPDATE creature_template SET ScriptName='npc_dimensius' WHERE entry=19554;
 
 /* ONYXIA'S LAIR */
 UPDATE instance_template SET ScriptName='instance_onyxias_lair' WHERE map=249;
