@@ -59,7 +59,8 @@ enum
     NPC_NETHERSPITE_INFERNAL    = 17646,                    // The netherspite infernal creature
     NPC_MALCHEZARS_AXE          = 17650,                    // Malchezar's axes summoned during phase 3
 
-    EQUIP_ID_AXE                = 23996,                    // Axes info
+    // EQUIP_ID_AXE             = 23996,                    // Axes info WotLK
+    EQUIP_ID_AXE                = 28767,                    // Axes info TBC
 
     ATTACK_TIMER_DEFAULT        = 2400,                     // note: for WotLK it is 2000
     ATTACK_TIMER_AXES           = 1600,                     // note: for WotLK it is 1333
