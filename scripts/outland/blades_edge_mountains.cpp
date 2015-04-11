@@ -17,7 +17,7 @@
 /* ScriptData
 SDName: Blades_Edge_Mountains
 SD%Complete: 90
-SDComment: Quest support: 10503, 10504, 10512, 10545, 10556, 10609, 11058, 11080. (npc_daranelle needs bit more work before consider complete)
+SDComment: Quest support: 10503, 10504, 10512, 10545, 10556, 10609, 10674, 10859, 11058, 11080. (npc_daranelle needs bit more work before consider complete)
 SDCategory: Blade's Edge Mountains
 EndScriptData */
 
@@ -26,6 +26,7 @@ mobs_nether_drake
 npc_daranelle
 npc_bloodmaul_stout_trigger
 npc_simon_game_bunny
+npc_orb_collector
 EndContentData */
 
 #include "precompiled.h"
@@ -794,6 +795,106 @@ bool EffectScriptEffectCreature_npc_simon_game_bunny(Unit* pCaster, uint32 uiSpe
     return false;
 }
 
+/*######
+## npc_orb_collector
+######*/
+
+enum
+{
+    NPC_LIGHT_ORB = 20635,
+    NPC_LIGHT_ORB_MINI = 20771,
+    NPC_KILL_CREDIT_TRIGGER = 21929,
+
+    MAX_PULL_DISTANCE = 20,
+};
+
+struct npc_orb_collectorAI : public ScriptedAI
+{
+    npc_orb_collectorAI(Creature* pCreature) : ScriptedAI(pCreature)
+    {
+        m_bOrbSelected = false;
+        m_bOrbPulled = false;
+        m_uiStartTimer = 2000;
+        Reset();
+    }
+
+    ObjectGuid m_selectedOrbGuid;
+    bool m_bOrbSelected;
+    bool m_bOrbPulled;
+
+    uint32 m_uiStartTimer;
+
+    void Reset() override {}
+
+    void MoveInLineOfSight(Unit* pWho) override
+    {
+        if (pWho->GetTypeId() != TYPEID_UNIT)
+            return;
+
+        if (!m_bOrbSelected && !m_bOrbPulled)
+        {
+            // Select an nearby orb to collect
+            if (pWho->GetEntry() == NPC_LIGHT_ORB || pWho->GetEntry() == NPC_LIGHT_ORB_MINI)
+            {
+                if (m_creature->GetDistance(pWho) <= MAX_PULL_DISTANCE)
+                {
+                    m_bOrbSelected = true;
+                    m_selectedOrbGuid = pWho->GetObjectGuid();
+                    m_uiStartTimer = 2000;
+                }
+            }
+        }
+        else if (m_bOrbPulled && pWho->GetObjectGuid() == m_selectedOrbGuid && m_creature->IsWithinDistInMap(pWho, 3.5f))
+        {
+            // Despawn the collected orb if close enough
+            ((Creature*)pWho)->ForcedDespawn();
+
+            // Give kill credit to the player
+            if (m_creature->IsTemporarySummon())
+            {
+                TemporarySummon* pTemporary = (TemporarySummon*)m_creature;
+
+                if (Player* pSummoner = m_creature->GetMap()->GetPlayer(pTemporary->GetSummonerGuid()))
+                    pSummoner->KilledMonsterCredit(NPC_KILL_CREDIT_TRIGGER, m_creature->GetObjectGuid());
+            }
+            // Despawn collector
+            m_creature->ForcedDespawn();
+        }
+        ScriptedAI::MoveInLineOfSight(pWho);
+    }
+
+    void UpdateAI(const uint32 uiDiff) override
+    {
+        if (m_bOrbSelected && !m_bOrbPulled)
+        {
+            // Start collecting after some delay
+            if (m_uiStartTimer < uiDiff)
+            {
+                Creature* pOrb = m_creature->GetMap()->GetCreature(m_selectedOrbGuid);
+
+                // Orb is pulled fast
+                pOrb->SetSpeedRate(MOVE_FLIGHT, 4.f);
+                pOrb->SetSpeedRate(MOVE_RUN, 4.f);
+                pOrb->SetWalk(false);
+                
+                // Move orb to the collector
+                float fX, fY, fZ;
+                pOrb->GetMotionMaster()->MoveIdle();
+                m_creature->GetContactPoint(pOrb, fX, fY, fZ);
+                pOrb->GetMotionMaster()->MovePoint(0, fX, fY, fZ);
+
+                m_bOrbPulled = true;
+            }
+            else m_uiStartTimer -= uiDiff;
+        }
+    }
+};
+
+CreatureAI* GetAI_npc_orb_collector(Creature* pCreature)
+{
+    return new npc_orb_collectorAI(pCreature);
+}
+
 void AddSC_blades_edge_mountains()
 {
     Script* pNewScript;
@@ -818,5 +919,10 @@ void AddSC_blades_edge_mountains()
     pNewScript->GetAI = &GetAI_npc_simon_game_bunny;
     pNewScript->pEffectDummyNPC = &EffectDummyCreature_npc_simon_game_bunny;
     pNewScript->pEffectScriptEffectNPC = &EffectScriptEffectCreature_npc_simon_game_bunny;
+    pNewScript->RegisterSelf();
+
+    pNewScript = new Script;
+    pNewScript->Name = "npc_orb_collector";
+    pNewScript->GetAI = &GetAI_npc_orb_collector;
     pNewScript->RegisterSelf();
 }
